@@ -226,8 +226,8 @@
           <input id="number-b" name="number-b" type="number" min="0" max="1000" step="any" inputmode="decimal" placeholder="Ej. 8" required>
         </label>
       </div>
-      <p class="hint">Ambos números deben estar entre 0 y 1000.</p>
-      <button type="submit">Calcular N1 y N2</button>
+      <p class="hint">Ambos números deben estar entre 0 y 1000. El cálculo se actualiza al cambiarlos.</p>
+      <button type="submit">Actualizar cálculo</button>
       <p id="message" class="message" role="alert" aria-live="polite"></p>
     </form>
 
@@ -241,7 +241,8 @@
         <p id="result-b" class="equation"></p>
       </article>
       <p class="explanation">
-        Las cantidades se expresan en múltiplos de 1.000 y cumplen ambas condiciones.
+        <span id="condition-a"></span><br>
+        <span id="condition-b"></span>
       </p>
     </section>
   </main>
@@ -254,6 +255,29 @@
     const results = document.querySelector("#results");
 
     const integerFormatter = new Intl.NumberFormat("es");
+    const decimalSeparator = new Intl.NumberFormat("es")
+      .formatToParts(1.1)
+      .find((part) => part.type === "decimal").value;
+
+    const formatFraction = ({ numerator, denominator }) => {
+      let scale = 0;
+      let scaledDenominator = denominator;
+      while (scaledDenominator > 1n && scaledDenominator % 10n === 0n) {
+        scaledDenominator /= 10n;
+        scale++;
+      }
+      if (scaledDenominator !== 1n) {
+        throw new Error("No se pudo mostrar el resultado decimal exacto.");
+      }
+
+      const scaledNumerator = numerator * (10n ** BigInt(scale));
+      const whole = scaledNumerator / denominator;
+      const remainder = scaledNumerator % denominator;
+      if (remainder === 0n) return integerFormatter.format(whole);
+
+      const fraction = remainder.toString().padStart(scale, "0").replace(/0+$/, "");
+      return `${integerFormatter.format(whole)}${decimalSeparator}${fraction}`;
+    };
 
     const gcd = (a, b) => {
       if (a < 0n) a = -a;
@@ -312,8 +336,7 @@
       }
     };
 
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
+    const calculate = () => {
       message.textContent = "";
       results.hidden = true;
       inputA.setAttribute("aria-invalid", "false");
@@ -321,6 +344,8 @@
 
       const rawA = inputA.value.trim();
       const rawB = inputB.value.trim();
+      if (rawA === "" || rawB === "") return;
+
       const a = Number(rawA);
       const b = Number(rawB);
       let hasError = false;
@@ -361,13 +386,36 @@
       const unitsN1 = findSmallestRatio(lower, upper);
       const unitsN2 =
         (lower.numerator * unitsN1) / lower.denominator + 1n;
+      const n1 = unitsN1 * 1000n;
+      const n2 = unitsN2 * 1000n;
+      const sum = n1 + n2;
+      const productA = {
+        numerator: factorA.numerator * n1,
+        denominator: factorA.denominator
+      };
+      const productB = {
+        numerator: factorB.numerator * n2,
+        denominator: factorB.denominator
+      };
 
       document.querySelector("#result-a").textContent =
-        integerFormatter.format(unitsN1 * 1000n);
+        integerFormatter.format(n1);
       document.querySelector("#result-b").textContent =
-        integerFormatter.format(unitsN2 * 1000n);
+        integerFormatter.format(n2);
+      document.querySelector("#condition-a").textContent =
+        `${rawA} × ${integerFormatter.format(n1)} = ${formatFraction(productA)} > ${integerFormatter.format(sum)} (N1 + N2)`;
+      document.querySelector("#condition-b").textContent =
+        `${rawB} × ${integerFormatter.format(n2)} = ${formatFraction(productB)} > ${integerFormatter.format(sum)} (N1 + N2)`;
       results.hidden = false;
+    };
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      calculate();
     });
+    inputA.addEventListener("input", calculate);
+    inputB.addEventListener("input", calculate);
   </script>
 </body>
 </html>
+
