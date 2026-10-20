@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f4f6fb">
+  <title>Calculadora de multiplicadores</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #18243b;
+      background: #f4f6fb;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 28px 16px;
+      background:
+        radial-gradient(ellipse at 10% 10%, #e4edff 0, transparent 38%),
+        radial-gradient(ellipse at 90% 90%, #e9e5ff 0, transparent 35%),
+        #f4f6fb;
+    }
+
+    main {
+      width: min(100%, 520px);
+      padding: clamp(24px, 6vw, 40px);
+      border: 1px solid #e6eaf2;
+      border-radius: 24px;
+      background: #fff;
+      box-shadow: 0 22px 60px rgb(28 44 78 / 10%);
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: #5269d9;
+      font-size: 0.76rem;
+      font-weight: 750;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.75rem, 6vw, 2.25rem);
+      letter-spacing: -0.045em;
+      line-height: 1.1;
+    }
+
+    .intro {
+      margin: 12px 0 28px;
+      color: #647087;
+      line-height: 1.6;
+    }
+
+    form {
+      display: grid;
+      gap: 18px;
+    }
+
+    .inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      font-size: 0.9rem;
+      font-weight: 650;
+    }
+
+    input {
+      width: 100%;
+      min-height: 52px;
+      padding: 0 14px;
+      border: 1px solid #d8deea;
+      border-radius: 12px;
+      outline: none;
+      background: #fbfcff;
+      color: #18243b;
+      font: inherit;
+      font-size: 1.05rem;
+      transition: border-color 140ms ease, box-shadow 140ms ease;
+    }
+
+    input:focus {
+      border-color: #6578e6;
+      box-shadow: 0 0 0 4px rgb(101 120 230 / 14%);
+    }
+
+    input[aria-invalid="true"] {
+      border-color: #d64b57;
+    }
+
+    .hint {
+      margin: -10px 0 0;
+      color: #7b8598;
+      font-size: 0.82rem;
+    }
+
+    button {
+      min-height: 52px;
+      border: 0;
+      border-radius: 12px;
+      background: #5269d9;
+      color: #fff;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+      transition: background 140ms ease, transform 140ms ease;
+    }
+
+    button:hover {
+      background: #4057c9;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button:focus-visible {
+      outline: 3px solid #aeb8ff;
+      outline-offset: 3px;
+    }
+
+    .message {
+      min-height: 1.4em;
+      margin: -6px 0 0;
+      color: #b42332;
+      font-size: 0.9rem;
+    }
+
+    .results {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid #e9edf4;
+    }
+
+    .results[hidden] {
+      display: none;
+    }
+
+    .sum {
+      margin: 0 0 16px;
+      color: #647087;
+      font-size: 0.94rem;
+    }
+
+    .sum strong {
+      color: #18243b;
+    }
+
+    .result-card {
+      padding: 16px;
+      border: 1px solid #e7eaf3;
+      border-radius: 14px;
+      background: #f9faff;
+    }
+
+    .result-card + .result-card {
+      margin-top: 10px;
+    }
+
+    .result-card h2 {
+      margin: 0 0 8px;
+      color: #5269d9;
+      font-size: 0.84rem;
+      font-weight: 750;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .equation {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .explanation {
+      margin: 16px 0 0;
+      color: #647087;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 420px) {
+      .inputs {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Calculadora</p>
+    <h1>Encuentra N1 y N2</h1>
+    <p class="intro">
+      Ingresa A y B. Calcularemos las cantidades N1 y N2, en miles, para que
+      A × N1 sea mayor que N1 + N2 y B × N2 también. Buscaremos la pareja válida
+      con la menor suma.
+    </p>
+
+    <form id="calculator-form" novalidate>
+      <div class="inputs">
+        <label for="number-a">
+          Número A
+          <input id="number-a" name="number-a" type="number" min="0" max="1000" step="any" inputmode="decimal" placeholder="Ej. 12" required>
+        </label>
+        <label for="number-b">
+          Número B
+          <input id="number-b" name="number-b" type="number" min="0" max="1000" step="any" inputmode="decimal" placeholder="Ej. 8" required>
+        </label>
+      </div>
+      <p class="hint">Ambos números deben estar entre 0 y 1000.</p>
+      <button type="submit">Calcular N1 y N2</button>
+      <p id="message" class="message" role="alert" aria-live="polite"></p>
+    </form>
+
+    <section id="results" class="results" aria-live="polite" hidden>
+      <article class="result-card">
+        <h2>N1</h2>
+        <p id="result-a" class="equation"></p>
+      </article>
+      <article class="result-card">
+        <h2>N2</h2>
+        <p id="result-b" class="equation"></p>
+      </article>
+      <p class="explanation">
+        Las cantidades se expresan en múltiplos de 1.000 y cumplen ambas condiciones.
+      </p>
+    </section>
+  </main>
+
+  <script>
+    const form = document.querySelector("#calculator-form");
+    const inputA = document.querySelector("#number-a");
+    const inputB = document.querySelector("#number-b");
+    const message = document.querySelector("#message");
+    const results = document.querySelector("#results");
+
+    const integerFormatter = new Intl.NumberFormat("es");
+
+    const gcd = (a, b) => {
+      if (a < 0n) a = -a;
+      if (b < 0n) b = -b;
+      while (b !== 0n) [a, b] = [b, a % b];
+      return a;
+    };
+
+    const parseDecimal = (value) => {
+      const match = value.match(/^(\d+)(?:\.(\d*))?(?:e([+-]?\d+))?$/i);
+      if (!match) throw new Error("No se pudo interpretar uno de los números.");
+
+      const fraction = match[2] || "";
+      const exponent = Number(match[3] || 0);
+      let numerator = BigInt(`${match[1]}${fraction}`);
+      let denominator = 10n ** BigInt(fraction.length);
+
+      if (exponent > 0) numerator *= 10n ** BigInt(exponent);
+      if (exponent < 0) denominator *= 10n ** BigInt(-exponent);
+
+      const divisor = gcd(numerator, denominator);
+      return { numerator: numerator / divisor, denominator: denominator / divisor };
+    };
+
+    const subtractOne = ({ numerator, denominator }) => {
+      const difference = numerator - denominator;
+      const divisor = gcd(difference, denominator);
+      return { numerator: difference / divisor, denominator: denominator / divisor };
+    };
+
+    const findSmallestRatio = (lower, upper) => {
+      let lowerNumerator = 0n;
+      let lowerDenominator = 1n;
+      let upperNumerator = 1n;
+      let upperDenominator = 0n;
+
+      while (true) {
+        const numerator = lowerNumerator + upperNumerator;
+        const denominator = lowerDenominator + upperDenominator;
+
+        if (numerator * lower.denominator <= lower.numerator * denominator) {
+          const steps =
+            (lower.numerator * lowerDenominator - lower.denominator * lowerNumerator) /
+            (lower.denominator * upperNumerator - lower.numerator * upperDenominator);
+          lowerNumerator += steps * upperNumerator;
+          lowerDenominator += steps * upperDenominator;
+        } else if (numerator * upper.denominator >= upper.numerator * denominator) {
+          const steps =
+            (upper.denominator * upperNumerator - upper.numerator * upperDenominator) /
+            (upper.numerator * lowerDenominator - upper.denominator * lowerNumerator);
+          upperNumerator += steps * lowerNumerator;
+          upperDenominator += steps * lowerDenominator;
+        } else {
+          return denominator;
+        }
+      }
+    };
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      message.textContent = "";
+      results.hidden = true;
+      inputA.setAttribute("aria-invalid", "false");
+      inputB.setAttribute("aria-invalid", "false");
+
+      const rawA = inputA.value.trim();
+      const rawB = inputB.value.trim();
+      const a = Number(rawA);
+      const b = Number(rawB);
+      let hasError = false;
+
+      for (const [input, raw, value, name] of [
+        [inputA, rawA, a, "A"],
+        [inputB, rawB, b, "B"]
+      ]) {
+        if (raw === "" || !Number.isFinite(value) || value < 0 || value > 1000) {
+          input.setAttribute("aria-invalid", "true");
+          message.textContent = `Ingresa un número válido para ${name}, entre 0 y 1000.`;
+          hasError = true;
+        }
+      }
+
+      if (hasError) return;
+
+      const factorA = parseDecimal(rawA);
+      const factorB = parseDecimal(rawB);
+      const adjustedA = subtractOne(factorA);
+      const adjustedB = subtractOne(factorB);
+
+      if (
+        adjustedA.numerator <= 0n ||
+        adjustedB.numerator <= 0n ||
+        adjustedA.numerator * adjustedB.numerator <= adjustedA.denominator * adjustedB.denominator
+      ) {
+        message.textContent =
+          "No existen cantidades positivas N1 y N2 que cumplan ambas condiciones con estos valores de A y B.";
+        return;
+      }
+
+      const lower = {
+        numerator: adjustedB.denominator,
+        denominator: adjustedB.numerator
+      };
+      const upper = adjustedA;
+      const unitsN1 = findSmallestRatio(lower, upper);
+      const unitsN2 =
+        (lower.numerator * unitsN1) / lower.denominator + 1n;
+
+      document.querySelector("#result-a").textContent =
+        integerFormatter.format(unitsN1 * 1000n);
+      document.querySelector("#result-b").textContent =
+        integerFormatter.format(unitsN2 * 1000n);
+      results.hidden = false;
+    });
+  </script>
+</body>
+</html>
