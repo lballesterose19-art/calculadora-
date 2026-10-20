@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#f4f6fb">
   <title>Calculadora de multiplicadores</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     :root {
       color-scheme: light;
@@ -14,265 +15,181 @@
       font-synthesis: none;
       text-rendering: optimizeLegibility;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
-
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
     body {
       min-width: 320px;
       min-height: 100vh;
       margin: 0;
       display: grid;
-      place-items: center;
+      place-items: start center;
       padding: 28px 16px;
       background:
         radial-gradient(ellipse at 10% 10%, #e4edff 0, transparent 38%),
         radial-gradient(ellipse at 90% 90%, #e9e5ff 0, transparent 35%),
         #f4f6fb;
     }
-
-    main {
-      width: min(100%, 520px);
+    .wrap { width: min(100%, 760px); display: grid; gap: 20px; }
+    main, .history {
       padding: clamp(24px, 6vw, 40px);
       border: 1px solid #e6eaf2;
       border-radius: 24px;
       background: #fff;
       box-shadow: 0 22px 60px rgb(28 44 78 / 10%);
     }
-
+    main { width: min(100%, 520px); margin: 0 auto; }
+    .history { width: 100%; }
     .eyebrow {
-      margin: 0 0 10px;
-      color: #5269d9;
-      font-size: 0.76rem;
-      font-weight: 750;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
+      margin: 0 0 10px; color: #5269d9; font-size: 0.76rem; font-weight: 750;
+      letter-spacing: 0.12em; text-transform: uppercase;
     }
-
-    h1 {
-      margin: 0;
-      font-size: clamp(1.75rem, 6vw, 2.25rem);
-      letter-spacing: -0.045em;
-      line-height: 1.1;
-    }
-
-    .intro {
-      margin: 12px 0 28px;
-      color: #647087;
-      line-height: 1.6;
-    }
-
-    form {
-      display: grid;
-      gap: 18px;
-    }
-
-    .inputs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-    }
-
-    label {
-      display: grid;
-      gap: 8px;
-      font-size: 0.9rem;
-      font-weight: 650;
-    }
-
+    h1 { margin: 0; font-size: clamp(1.75rem, 6vw, 2.25rem); letter-spacing: -0.045em; line-height: 1.1; }
+    h2.title { margin: 0; font-size: 1.4rem; letter-spacing: -0.03em; }
+    .intro { margin: 12px 0 28px; color: #647087; line-height: 1.6; }
+    form { display: grid; gap: 18px; }
+    .inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    label { display: grid; gap: 8px; font-size: 0.9rem; font-weight: 650; }
     input {
-      width: 100%;
-      min-height: 52px;
-      padding: 0 14px;
-      border: 1px solid #d8deea;
-      border-radius: 12px;
-      outline: none;
-      background: #fbfcff;
-      color: #18243b;
-      font: inherit;
-      font-size: 1.05rem;
-      transition: border-color 140ms ease, box-shadow 140ms ease;
+      width: 100%; min-height: 52px; padding: 0 14px; border: 1px solid #d8deea;
+      border-radius: 12px; outline: none; background: #fbfcff; color: #18243b;
+      font: inherit; font-size: 1.05rem; transition: border-color 140ms ease, box-shadow 140ms ease;
     }
-
-    input:focus {
-      border-color: #6578e6;
-      box-shadow: 0 0 0 4px rgb(101 120 230 / 14%);
-    }
-
-    input[aria-invalid="true"] {
-      border-color: #d64b57;
-    }
-
-    .hint {
-      margin: -10px 0 0;
-      color: #7b8598;
-      font-size: 0.82rem;
-    }
-
+    input:focus { border-color: #6578e6; box-shadow: 0 0 0 4px rgb(101 120 230 / 14%); }
+    input[aria-invalid="true"] { border-color: #d64b57; }
+    .hint { margin: -10px 0 0; color: #7b8598; font-size: 0.82rem; }
     button {
-      min-height: 52px;
-      border: 0;
-      border-radius: 12px;
-      background: #5269d9;
-      color: #fff;
-      cursor: pointer;
-      font: inherit;
-      font-weight: 700;
+      min-height: 48px; padding: 0 18px; border: 0; border-radius: 12px; background: #5269d9;
+      color: #fff; cursor: pointer; font: inherit; font-weight: 700;
       transition: background 140ms ease, transform 140ms ease;
     }
-
-    button:hover {
-      background: #4057c9;
+    button:hover { background: #4057c9; }
+    button:active { transform: translateY(1px); }
+    button:focus-visible { outline: 3px solid #aeb8ff; outline-offset: 3px; }
+    button:disabled { background: #b9c1e8; cursor: not-allowed; }
+    button.secondary { background: #eef1fb; color: #3d4fb8; }
+    button.secondary:hover { background: #e0e5f8; }
+    button.danger { background: #fdecee; color: #b42332; }
+    button.danger:hover { background: #fadadd; }
+    button.green { background: #1f8a4c; }
+    button.green:hover { background: #197340; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .message { min-height: 1.4em; margin: -6px 0 0; color: #b42332; font-size: 0.9rem; }
+    .results { margin-top: 24px; padding-top: 24px; border-top: 1px solid #e9edf4; }
+    .results[hidden] { display: none; }
+    .result-card { padding: 16px; border: 1px solid #e7eaf3; border-radius: 14px; background: #f9faff; }
+    .result-card + .result-card { margin-top: 10px; }
+    .result-card h3 {
+      margin: 0 0 8px; color: #5269d9; font-size: 0.84rem; font-weight: 750;
+      letter-spacing: 0.04em; text-transform: uppercase;
     }
-
-    button:active {
-      transform: translateY(1px);
-    }
-
-    button:focus-visible {
-      outline: 3px solid #aeb8ff;
-      outline-offset: 3px;
-    }
-
-    .message {
-      min-height: 1.4em;
-      margin: -6px 0 0;
-      color: #b42332;
-      font-size: 0.9rem;
-    }
-
-    .results {
-      margin-top: 24px;
-      padding-top: 24px;
-      border-top: 1px solid #e9edf4;
-    }
-
-    .results[hidden] {
-      display: none;
-    }
-
-    .sum {
-      margin: 0 0 16px;
-      color: #647087;
-      font-size: 0.94rem;
-    }
-
-    .sum strong {
-      color: #18243b;
-    }
-
-    .result-card {
-      padding: 16px;
-      border: 1px solid #e7eaf3;
-      border-radius: 14px;
-      background: #f9faff;
-    }
-
-    .result-card + .result-card {
-      margin-top: 10px;
-    }
-
-    .result-card h2 {
-      margin: 0 0 8px;
-      color: #5269d9;
-      font-size: 0.84rem;
-      font-weight: 750;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-
-    .equation {
-      margin: 0;
-      font-size: 1.15rem;
-      font-weight: 700;
-      overflow-wrap: anywhere;
-    }
-
-    .explanation {
-      margin: 16px 0 0;
-      color: #647087;
-      font-size: 0.85rem;
-      line-height: 1.5;
-    }
-
+    .equation { margin: 0; font-size: 1.15rem; font-weight: 700; overflow-wrap: anywhere; }
+    .explanation { margin: 16px 0 0; color: #647087; font-size: 0.85rem; line-height: 1.5; overflow-wrap: anywhere; }
+    .save-row { margin-top: 16px; display: grid; }
+    .saved-note { margin: 8px 0 0; color: #1f8a4c; font-size: 0.85rem; min-height: 1.2em; }
+    .history-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .history-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+    .history-tools button { min-height: 40px; font-size: 0.88rem; }
+    .table-wrap { overflow-x: auto; border: 1px solid #e7eaf3; border-radius: 14px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { padding: 10px 12px; text-align: left; white-space: nowrap; border-bottom: 1px solid #eef0f6; }
+    th { background: #f4f6fc; color: #5269d9; font-size: 0.76rem; letter-spacing: 0.05em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    td.num { font-variant-numeric: tabular-nums; }
+    td button { min-height: 30px; padding: 0 10px; font-size: 0.78rem; }
+    .empty { padding: 28px; text-align: center; color: #7b8598; }
     @media (max-width: 420px) {
-      .inputs {
-        grid-template-columns: 1fr;
-      }
+      .inputs, .actions { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <main>
-    <p class="eyebrow">Calculadora</p>
-    <h1>Encuentra N1 y N2</h1>
-    <p class="intro">
-      Ingresa A y B. Calcularemos las cantidades N1 y N2, en miles, para que
-      A × N1 sea mayor que N1 + N2 y B × N2 también. Buscaremos la pareja válida
-      con la menor suma.
-    </p>
-
-    <form id="calculator-form" novalidate>
-      <div class="inputs">
-        <label for="number-a">
-          Número A
-          <input id="number-a" name="number-a" type="number" min="0" max="1000" step="any" inputmode="decimal" placeholder="Ej. 12" required>
-        </label>
-        <label for="number-b">
-          Número B
-          <input id="number-b" name="number-b" type="number" min="0" max="1000" step="any" inputmode="decimal" placeholder="Ej. 8" required>
-        </label>
-      </div>
-      <p class="hint">Ambos números deben estar entre 0 y 1000. El cálculo se actualiza al cambiarlos.</p>
-      <button type="submit">Actualizar cálculo</button>
-      <p id="message" class="message" role="alert" aria-live="polite"></p>
-    </form>
-
-    <section id="results" class="results" aria-live="polite" hidden>
-      <article class="result-card">
-        <h2>N1</h2>
-        <p id="result-a" class="equation"></p>
-      </article>
-      <article class="result-card">
-        <h2>N2</h2>
-        <p id="result-b" class="equation"></p>
-      </article>
-      <p class="explanation">
-        <span id="condition-a"></span><br>
-        <span id="condition-b"></span>
+  <div class="wrap">
+    <main>
+      <p class="eyebrow">Calculadora</p>
+      <h1>Encuentra N1 y N2</h1>
+      <p class="intro">
+        Ingresa A y B. Calcularemos las cantidades N1 y N2, en miles, para que
+        A × N1 sea mayor que N1 + N2 y B × N2 también. Buscaremos la pareja válida
+        con la menor suma. Puedes calcular tantas veces como quieras.
       </p>
+
+      <form id="calculator-form" novalidate>
+        <div class="inputs">
+          <label for="number-a">
+            Número A
+            <input id="number-a" type="text" inputmode="decimal" autocomplete="off" placeholder="Ej. 12">
+          </label>
+          <label for="number-b">
+            Número B
+            <input id="number-b" type="text" inputmode="decimal" autocomplete="off" placeholder="Ej. 8">
+          </label>
+        </div>
+        <p class="hint">Ambos números deben estar entre 0 y 1000 (puedes usar coma o punto decimal). El cálculo se actualiza al escribir.</p>
+        <div class="actions">
+          <button type="submit">Calcular</button>
+          <button type="button" id="new-btn" class="secondary">Nuevo cálculo</button>
+        </div>
+        <p id="message" class="message" role="alert" aria-live="polite"></p>
+      </form>
+
+      <section id="results" class="results" aria-live="polite" hidden>
+        <article class="result-card">
+          <h3>N1</h3>
+          <p id="result-a" class="equation"></p>
+        </article>
+        <article class="result-card">
+          <h3>N2</h3>
+          <p id="result-b" class="equation"></p>
+        </article>
+        <p class="explanation">
+          <span id="condition-a"></span><br>
+          <span id="condition-b"></span>
+        </p>
+        <div class="save-row">
+          <button type="button" id="save-btn" class="green">Guardar en el historial</button>
+          <p id="saved-note" class="saved-note" aria-live="polite"></p>
+        </div>
+      </section>
+    </main>
+
+    <section class="history" aria-labelledby="history-title">
+      <div class="history-head">
+        <h2 id="history-title" class="title">Historial guardado</h2>
+        <div class="history-tools">
+          <button type="button" id="export-btn">Descargar Excel</button>
+          <button type="button" id="clear-btn" class="danger">Borrar todo</button>
+        </div>
+      </div>
+      <div class="table-wrap" id="table-wrap"></div>
     </section>
-  </main>
+  </div>
 
   <script>
-    const form = document.querySelector("#calculator-form");
-    const inputA = document.querySelector("#number-a");
-    const inputB = document.querySelector("#number-b");
-    const message = document.querySelector("#message");
-    const results = document.querySelector("#results");
+    const $ = (sel) => document.querySelector(sel);
+    const form = $("#calculator-form");
+    const inputA = $("#number-a");
+    const inputB = $("#number-b");
+    const message = $("#message");
+    const results = $("#results");
+    const savedNote = $("#saved-note");
 
     const integerFormatter = new Intl.NumberFormat("es");
     const decimalSeparator = new Intl.NumberFormat("es")
-      .formatToParts(1.1)
-      .find((part) => part.type === "decimal").value;
+      .formatToParts(1.1).find((part) => part.type === "decimal").value;
 
+    // ==CORE-START==
     const formatFraction = ({ numerator, denominator }) => {
-      let scale = 0;
-      let scaledDenominator = denominator;
-      while (scaledDenominator > 1n && scaledDenominator % 10n === 0n) {
-        scaledDenominator /= 10n;
-        scale++;
-      }
-      if (scaledDenominator !== 1n) {
-        throw new Error("No se pudo mostrar el resultado decimal exacto.");
-      }
+      // El denominador solo puede tener factores 2 y 5 (viene de un decimal).
+      let d = denominator, twos = 0, fives = 0;
+      while (d % 2n === 0n) { d /= 2n; twos++; }
+      while (d % 5n === 0n) { d /= 5n; fives++; }
+      if (d !== 1n) throw new Error("No se pudo mostrar el resultado decimal exacto.");
 
-      const scaledNumerator = numerator * (10n ** BigInt(scale));
-      const whole = scaledNumerator / denominator;
-      const remainder = scaledNumerator % denominator;
+      const scale = Math.max(twos, fives);
+      const pow = 10n ** BigInt(scale);
+      const value = (numerator * pow) / denominator;
+      const whole = value / pow;
+      const remainder = value % pow;
       if (remainder === 0n) return integerFormatter.format(whole);
 
       const fraction = remainder.toString().padStart(scale, "0").replace(/0+$/, "");
@@ -298,13 +215,13 @@
       if (exponent > 0) numerator *= 10n ** BigInt(exponent);
       if (exponent < 0) denominator *= 10n ** BigInt(-exponent);
 
-      const divisor = gcd(numerator, denominator);
+      const divisor = gcd(numerator, denominator) || 1n;
       return { numerator: numerator / divisor, denominator: denominator / divisor };
     };
 
     const subtractOne = ({ numerator, denominator }) => {
       const difference = numerator - denominator;
-      const divisor = gcd(difference, denominator);
+      const divisor = gcd(difference, denominator) || 1n;
       return { numerator: difference / divisor, denominator: denominator / divisor };
     };
 
@@ -336,33 +253,8 @@
       }
     };
 
-    const calculate = () => {
-      message.textContent = "";
-      results.hidden = true;
-      inputA.setAttribute("aria-invalid", "false");
-      inputB.setAttribute("aria-invalid", "false");
-
-      const rawA = inputA.value.trim();
-      const rawB = inputB.value.trim();
-      if (rawA === "" || rawB === "") return;
-
-      const a = Number(rawA);
-      const b = Number(rawB);
-      let hasError = false;
-
-      for (const [input, raw, value, name] of [
-        [inputA, rawA, a, "A"],
-        [inputB, rawB, b, "B"]
-      ]) {
-        if (raw === "" || !Number.isFinite(value) || value < 0 || value > 1000) {
-          input.setAttribute("aria-invalid", "true");
-          message.textContent = `Ingresa un número válido para ${name}, entre 0 y 1000.`;
-          hasError = true;
-        }
-      }
-
-      if (hasError) return;
-
+    // Devuelve { error } o { n1, n2, sum, productA, productB } (BigInt / texto)
+    const solve = (rawA, rawB) => {
       const factorA = parseDecimal(rawA);
       const factorB = parseDecimal(rawB);
       const adjustedA = subtractOne(factorA);
@@ -373,48 +265,175 @@
         adjustedB.numerator <= 0n ||
         adjustedA.numerator * adjustedB.numerator <= adjustedA.denominator * adjustedB.denominator
       ) {
-        message.textContent =
-          "No existen cantidades positivas N1 y N2 que cumplan ambas condiciones con estos valores de A y B.";
-        return;
+        return { error: "No existen cantidades positivas N1 y N2 que cumplan ambas condiciones con estos valores de A y B." };
       }
 
-      const lower = {
-        numerator: adjustedB.denominator,
-        denominator: adjustedB.numerator
-      };
+      const lower = { numerator: adjustedB.denominator, denominator: adjustedB.numerator };
       const upper = adjustedA;
       const unitsN1 = findSmallestRatio(lower, upper);
-      const unitsN2 =
-        (lower.numerator * unitsN1) / lower.denominator + 1n;
+      const unitsN2 = (lower.numerator * unitsN1) / lower.denominator + 1n;
       const n1 = unitsN1 * 1000n;
       const n2 = unitsN2 * 1000n;
-      const sum = n1 + n2;
-      const productA = {
-        numerator: factorA.numerator * n1,
-        denominator: factorA.denominator
+      return {
+        n1, n2, sum: n1 + n2,
+        productA: formatFraction({ numerator: factorA.numerator * n1, denominator: factorA.denominator }),
+        productB: formatFraction({ numerator: factorB.numerator * n2, denominator: factorB.denominator })
       };
-      const productB = {
-        numerator: factorB.numerator * n2,
-        denominator: factorB.denominator
-      };
+    };
+    // ==CORE-END==
 
-      document.querySelector("#result-a").textContent =
-        integerFormatter.format(n1);
-      document.querySelector("#result-b").textContent =
-        integerFormatter.format(n2);
-      document.querySelector("#condition-a").textContent =
-        `${rawA} × ${integerFormatter.format(n1)} = ${formatFraction(productA)} > ${integerFormatter.format(sum)} (N1 + N2)`;
-      document.querySelector("#condition-b").textContent =
-        `${rawB} × ${integerFormatter.format(n2)} = ${formatFraction(productB)} > ${integerFormatter.format(sum)} (N1 + N2)`;
-      results.hidden = false;
+    const normalize = (text) => text.trim().replace(",", ".");
+    const validNumber = (raw) => /^\d+(\.\d*)?$/.test(raw) && Number(raw) >= 0 && Number(raw) <= 1000;
+
+    let current = null; // último resultado válido
+
+    const calculate = () => {
+      message.textContent = "";
+      savedNote.textContent = "";
+      results.hidden = true;
+      current = null;
+      inputA.setAttribute("aria-invalid", "false");
+      inputB.setAttribute("aria-invalid", "false");
+
+      const rawA = normalize(inputA.value);
+      const rawB = normalize(inputB.value);
+      if (rawA === "" || rawB === "") return;
+
+      let hasError = false;
+      for (const [input, raw, name] of [[inputA, rawA, "A"], [inputB, rawB, "B"]]) {
+        if (!validNumber(raw)) {
+          input.setAttribute("aria-invalid", "true");
+          message.textContent = `Ingresa un número válido para ${name}, entre 0 y 1000.`;
+          hasError = true;
+        }
+      }
+      if (hasError) return;
+
+      try {
+        const r = solve(rawA, rawB);
+        if (r.error) { message.textContent = r.error; return; }
+
+        $("#result-a").textContent = integerFormatter.format(r.n1);
+        $("#result-b").textContent = integerFormatter.format(r.n2);
+        $("#condition-a").textContent =
+          `${rawA} × ${integerFormatter.format(r.n1)} = ${r.productA} > ${integerFormatter.format(r.sum)} (N1 + N2)`;
+        $("#condition-b").textContent =
+          `${rawB} × ${integerFormatter.format(r.n2)} = ${r.productB} > ${integerFormatter.format(r.sum)} (N1 + N2)`;
+        results.hidden = false;
+        current = { a: rawA, b: rawB, n1: r.n1.toString(), n2: r.n2.toString(), sum: r.sum.toString() };
+      } catch (err) {
+        message.textContent = "Ocurrió un error al calcular. Revisa los números e inténtalo de nuevo.";
+        console.error(err);
+      }
     };
 
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      calculate();
+    // ---------- Historial ----------
+    const STORAGE_KEY = "calculadora-multiplicadores-historial";
+    const loadHistory = () => {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
+    };
+    const saveHistory = (list) => {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); return true; } catch { return false; }
+    };
+    let history = loadHistory();
+
+    const pad = (n) => String(n).padStart(2, "0");
+    const dateText = (d) => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+    const timeText = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
+    const renderHistory = () => {
+      const wrap = $("#table-wrap");
+      $("#export-btn").disabled = history.length === 0;
+      $("#clear-btn").disabled = history.length === 0;
+      if (history.length === 0) {
+        wrap.innerHTML = '<p class="empty">Aún no has guardado cálculos.</p>';
+        return;
+      }
+      const rows = history.map((h, i) => `
+        <tr>
+          <td>${h.date}</td>
+          <td>${h.time}</td>
+          <td class="num">${h.a.replace(".", decimalSeparator)}</td>
+          <td class="num">${h.b.replace(".", decimalSeparator)}</td>
+          <td class="num">${integerFormatter.format(BigInt(h.n1))}</td>
+          <td class="num">${integerFormatter.format(BigInt(h.n2))}</td>
+          <td class="num">${integerFormatter.format(BigInt(h.sum))}</td>
+          <td><button type="button" class="danger" data-del="${i}">Quitar</button></td>
+        </tr>`).reverse().join("");
+      wrap.innerHTML = `
+        <table>
+          <thead><tr><th>Fecha</th><th>Hora</th><th>A</th><th>B</th><th>N1</th><th>N2</th><th>N1 + N2</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    };
+
+    $("#save-btn").addEventListener("click", () => {
+      if (!current) return;
+      const now = new Date();
+      history.push({ date: dateText(now), time: timeText(now), ...current });
+      const ok = saveHistory(history);
+      savedNote.textContent = ok
+        ? "Guardado en el historial."
+        : "Guardado solo mientras esta página esté abierta (el navegador bloqueó el almacenamiento). Descarga el Excel.";
+      renderHistory();
     });
+
+    $("#table-wrap").addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-del]");
+      if (!btn) return;
+      history.splice(Number(btn.dataset.del), 1);
+      saveHistory(history);
+      renderHistory();
+    });
+
+    $("#clear-btn").addEventListener("click", () => {
+      if (!confirm("¿Borrar todo el historial? Esta acción no se puede deshacer.")) return;
+      history = [];
+      saveHistory(history);
+      renderHistory();
+    });
+
+    const toNum = (text) => {
+      const big = BigInt(text);
+      return big <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(big) : text;
+    };
+
+    $("#export-btn").addEventListener("click", () => {
+      if (history.length === 0) return;
+      const stamp = new Date();
+      const fileBase = `historial-calculadora-${stamp.getFullYear()}${pad(stamp.getMonth() + 1)}${pad(stamp.getDate())}-${pad(stamp.getHours())}${pad(stamp.getMinutes())}`;
+      const header = ["Fecha", "Hora", "A", "B", "N1", "N2", "N1 + N2"];
+      const data = history.map((h) => [h.date, h.time, Number(h.a), Number(h.b), toNum(h.n1), toNum(h.n2), toNum(h.sum)]);
+
+      if (window.XLSX) {
+        const ws = XLSX.utils.aoa_to_sheet([header, ...data]);
+        ws["!cols"] = [{ wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 14 }];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Historial");
+        XLSX.writeFile(wb, `${fileBase}.xlsx`);
+      } else {
+        // Respaldo sin conexión: CSV con separador ; que Excel abre directamente
+        const csv = "\ufeff" + [header, ...data].map((r) => r.join(";")).join("\r\n");
+        const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+        const a = document.createElement("a");
+        a.href = url; a.download = `${fileBase}.csv`;
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      }
+    });
+
+    $("#new-btn").addEventListener("click", () => {
+      inputA.value = "";
+      inputB.value = "";
+      calculate();
+      inputA.focus();
+    });
+
+    form.addEventListener("submit", (event) => { event.preventDefault(); calculate(); });
     inputA.addEventListener("input", calculate);
     inputB.addEventListener("input", calculate);
+
+    renderHistory();
   </script>
 </body>
 </html>
